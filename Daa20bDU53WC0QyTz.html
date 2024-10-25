@@ -1,0 +1,592 @@
+<html><head><base href="https://footballroster.com/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roster de Equipo - Editor de Club</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: 20px;
+  }
+  .club-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .club-name {
+    color: #1a3b5d;
+    text-align: center;
+    margin: 0;
+    font-size: 20px;
+    text-transform: uppercase;
+  }
+  .edit-club-name {
+    position: absolute;
+    right: 0;
+    background: #1a3b5d;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .club-name-input {
+    font-size: 20px;
+    width: 80%;
+    text-align: center;
+    padding: 5px;
+    border: 2px solid #1a3b5d;
+    border-radius: 5px;
+    display: none;
+    text-transform: uppercase;
+  }
+  table {
+    table-layout: fixed;
+    font-size: 12px;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  th, td {
+    padding: 8px 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-bottom: 1px solid #ddd;
+  }
+  th {
+    background-color: #1a3b5d;
+    color: white;
+    text-align: center;
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  tr:hover {
+    background-color: #ddd;
+  }
+  .column-1 { width: 2.5%; }
+  .column-nombre { width: 12%; }
+  .column-apellido { width: 12%; }
+  .column-apellido { width: 12%; }
+  .column-fecha { width: 11%; }
+  .column-curp { width: 14%; }
+  .column-telefono { width: 10%; }
+  .column-playera { width: 7%; }
+  .column-posicion { width: 12%; }
+  .column-acciones { width: 8%; }
+  input[type="text"], input[type="tel"], select {
+    width: 100%;
+    padding: 2px;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+  .tel-input {
+    text-align: right;
+  }
+  .center-input {
+    text-align: center;
+  }
+  button {
+    background-color: #1a3b5d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 12px;
+  }
+  button:hover {
+    background-color: #2c5d8f;
+  }
+  #newPlayerForm {
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+  }
+  #newPlayerForm input, #newPlayerForm select {
+    margin-bottom: 10px;
+    font-size: 12px;
+    padding: 2px;
+  }
+  .date-input {
+    display: inline-block;
+    position: relative;
+  }
+  .date-input input {
+    padding-right: 30px;
+  }
+  .date-input:after {
+    content: "\1F4C5";
+    font-size: 1.2em;
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .action-buttons {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+  }
+  @media print {
+    .edit-club-name,
+    .action-buttons,
+    #newPlayerForm,
+    button {
+      display: none !important;
+    }
+    
+    table input,
+    table select {
+      display: inline !important;
+      border: none !important;
+      padding: 0 !important;
+      background: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      appearance: none !important;
+    }
+    
+    td, th {
+      border: 1px solid #000;
+      padding: 8px !important;
+    }
+    
+    th {
+      background-color: #f0f0f0 !important;
+      color: black !important;
+    }
+    
+    .container {
+      box-shadow: none;
+      padding: 0;
+    }
+    
+    body, table, input, select {
+      color: black !important;
+    }
+    
+    tr:hover {
+      background-color: transparent !important;
+    }
+    .date-input:after {
+      display: none !important;
+    }
+  }
+  .export-view .date-input:after {
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="club-header">
+      <h1 id="clubName" class="club-name">GANADEROS DE CALERA FC</h1>
+      <input type="text" id="clubNameInput" class="club-name-input">
+      <button class="edit-club-name" onclick="toggleClubNameEdit()">EDITAR NOMBRE</button>
+    </div>
+    
+    <table id="rosterTable">
+      <thead>
+        <tr>
+          <th class="column-1">NO.</th>
+          <th class="column-nombre">NOMBRE</th>
+          <th class="column-apellido">AP. PATERNO</th>
+          <th class="column-apellido">AP. MATERNO</th>
+          <th class="column-fecha">FECHA NAC.</th>
+          <th class="column-curp">CURP</th>
+          <th class="column-telefono">TELÉFONO</th>
+          <th class="column-playera">NO. PLAY</th>
+          <th class="column-posicion">POSICIÓN</th>
+          <th class="column-acciones">ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Los datos de los jugadores se insertarán aquí dinámicamente -->
+      </tbody>
+    </table>
+    
+    <div class="action-buttons">
+      <button onclick="exportToPDF()">EXPORTAR PDF</button>
+      <button onclick="exportToExcel()">EXPORTAR EXCEL</button>
+      <button onclick="exportToDrive()">EXPORTAR A DRIVE</button>
+      <button onclick="saveData()">GUARDAR</button>
+      <button onclick="window.print()">IMPRIMIR</button>
+    </div>
+
+    <button onclick="toggleNewPlayerForm()">AGREGAR NUEVO JUGADOR</button>
+    
+    <div id="newPlayerForm">
+      <h2>AGREGAR NUEVO JUGADOR</h2>
+      <input type="text" id="newNombre" placeholder="Nombre">
+      <input type="text" id="newApellidoPaterno" placeholder="Apellido Paterno">
+      <input type="text" id="newApellidoMaterno" placeholder="Apellido Materno">
+      <div class="date-input">
+        <input type="text" id="newFechaNacimiento" placeholder="Fecha de Nacimiento">
+      </div>
+      <input type="text" id="newCURP" placeholder="CURP">
+      <input type="tel" id="newTelefono" placeholder="Teléfono" pattern="[0-9]*" class="tel-input">
+      <input type="text" id="newNoPlayera" placeholder="No. Playera" class="center-input">
+      <select id="newPosicion" class="center-input">
+        <option value="">Seleccionar posición</option>
+        <option value="PORTERO">PORTERO</option>
+        <option value="DEFENSA">DEFENSA</option>
+        <option value="MEDIOCAMPISTA">MEDIOCAMPISTA</option>
+        <option value="DELANTERO">DELANTERO</option>
+      </select>
+      <button onclick="addNewPlayer()">GUARDAR JUGADOR</button>
+    </div>
+  </div>
+
+  <script>
+    const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+    const API_KEY = 'YOUR_API_KEY';
+    const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
+
+    function isDuplicateJerseyNumber(number, currentIndex = -1) {
+      return players.some((player, index) => 
+        index !== currentIndex && player.noPlayera === number
+      );
+    }
+
+    async function initializeGapiClient() {
+      try {
+        await gapi.client.init({
+          apiKey: API_KEY,
+          discoveryDocs: [DISCOVERY_DOC],
+        });
+        gapiInited = true;
+      } catch (err) {
+        console.error('Error initializing GAPI client:', err);
+      }
+    }
+
+    function gapiLoaded() {
+      gapi.load('client', initializeGapiClient);
+    }
+
+    function gisLoaded() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // defined later
+      });
+      gisInited = true;
+    }
+
+    let players = [
+      {no: "1", nombre: "GERARDO", apellidoPaterno: "SORIANO", apellidoMaterno: "MURO", fechaNacimiento: "31/5/2005", curp: "SOMG050531HCHRRA3", telefono: "", noPlayera: "01", posicion: "PORTERO"},
+      {no: "2", nombre: "WILIAM", apellidoPaterno: "HERNANDEZ", apellidoMaterno: "CAMPOS", fechaNacimiento: "3/12/2007", curp: "HECW071203HZSR8AA1", telefono: "", noPlayera: "31", posicion: "PORTERO"},
+      {no: "3", nombre: "JOSÉ EDUARDO", apellidoPaterno: "GUERRERO", apellidoMaterno: "GONZALEZ", fechaNacimiento: "5/1/2007", curp: "GUGE070105HZSNNA9", telefono: "", noPlayera: "32", posicion: "PORTERO"},
+      {no: "4", nombre: "ADRIAN EMMANUEL", apellidoPaterno: "MARTINEZ", apellidoMaterno: "MACIAS", fechaNacimiento: "11/8/2008", curp: "MAMA080811HZSCDA4", telefono: "", noPlayera: "33", posicion: "PORTERO"},
+      {no: "5", nombre: "MIGUEL ANGEL", apellidoPaterno: "ORTIZ", apellidoMaterno: "LUNA", fechaNacimiento: "13/10/2005", curp: "OILM051013HZSR9A2", telefono: "", noPlayera: "04", posicion: "DEFENSA"},
+      {no: "6", nombre: "LUIS ALFREDO", apellidoPaterno: "HERNANDEZ", apellidoMaterno: "IBAÑEZ", fechaNacimiento: "8/4/2006", curp: "HEIL060408HZSR8A4", telefono: "", noPlayera: "02", posicion: "DEFENSA"},
+      {no: "7", nombre: "ALFONSO", apellidoPaterno: "IBARRA", apellidoMaterno: "QUEZADA", fechaNacimiento: "25/9/2003", curp: "IAQA030925HZSB4A2", telefono: "", noPlayera: "05", posicion: "DEFENSA"}
+    ];
+
+    function toggleClubNameEdit() {
+      const clubName = document.getElementById('clubName');
+      const clubNameInput = document.getElementById('clubNameInput');
+      const editButton = document.querySelector('.edit-club-name');
+
+      if (clubName.style.display !== 'none') {
+        clubName.style.display = 'none';
+        clubNameInput.style.display = 'block';
+        clubNameInput.value = clubName.textContent;
+        clubNameInput.focus();
+        editButton.textContent = 'GUARDAR';
+      } else {
+        clubName.textContent = clubNameInput.value.toUpperCase();
+        clubName.style.display = 'block';
+        clubNameInput.style.display = 'none';
+        editButton.textContent = 'EDITAR NOMBRE';
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector('#rosterTable tbody');
+      tbody.innerHTML = '';
+      players.forEach((player, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="column-1"><input type="text" value="${player.no}" readonly class="center-input"></td>
+          <td class="column-nombre"><input type="text" value="${player.nombre}" onchange="updatePlayer(${index}, 'nombre', this.value)"></td>
+          <td class="column-apellido"><input type="text" value="${player.apellidoPaterno}" onchange="updatePlayer(${index}, 'apellidoPaterno', this.value)"></td>
+          <td class="column-apellido"><input type="text" value="${player.apellidoMaterno}" onchange="updatePlayer(${index}, 'apellidoMaterno', this.value)"></td>
+          <td class="column-fecha"><div class="date-input"><input type="text" class="datepicker" value="${player.fechaNacimiento}" onchange="updatePlayer(${index}, 'fechaNacimiento', this.value)"></div></td>
+          <td class="column-curp"><input type="text" value="${player.curp}" onchange="updatePlayer(${index}, 'curp', this.value)"></td>
+          <td class="column-telefono"><input type="tel" value="${player.telefono}" onchange="updatePlayer(${index}, 'telefono', this.value)" pattern="[0-9]*" class="tel-input"></td>
+          <td class="column-playera"><input type="text" value="${player.noPlayera}" onchange="updatePlayer(${index}, 'noPlayera', this.value)" class="center-input"></td>
+          <td class="column-posicion">
+            <select onchange="updatePlayer(${index}, 'posicion', this.value)" class="center-input">
+              <option value="PORTERO" ${player.posicion === 'PORTERO' ? 'selected' : ''}>PORTERO</option>
+              <option value="DEFENSA" ${player.posicion === 'DEFENSA' ? 'selected' : ''}>DEFENSA</option>
+              <option value="MEDIOCAMPISTA" ${player.posicion === 'MEDIOCAMPISTA' ? 'selected' : ''}>MEDIOCAMPISTA</option>
+              <option value="DELANTERO" ${player.posicion === 'DELANTERO' ? 'selected' : ''}>DELANTERO</option>
+            </select>
+          </td>
+          <td class="column-acciones"><button onclick="deletePlayer(${index})">ELIMINAR</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+      initDatepickers();
+    }
+
+    function initDatepickers() {
+      flatpickr(".datepicker", {
+        dateFormat: "d/m/Y",
+        allowInput: true
+      });
+      flatpickr("#newFechaNacimiento", {
+        dateFormat: "d/m/Y",
+        allowInput: true
+      });
+    }
+
+    function updatePlayer(index, field, value) {
+      if (field === 'no') return; // Prevent manual editing of number
+      if (field === 'telefono') {
+        value = value.replace(/\D/g, '');
+      }
+      if (field === 'noPlayera') {
+        value = padPlayerNumber(value);
+        if (isDuplicateJerseyNumber(value, index)) {
+          alert('¡ALERTA! EL NÚMERO DE PLAYERA ' + value + ' YA ESTÁ EN USO');
+          renderTable(); // Refresh table to revert change
+          return;
+        }
+      }
+      players[index][field] = value.toUpperCase();
+    }
+
+    function padPlayerNumber(number) {
+      return number.length === 1 ? '0' + number : number;
+    }
+
+    function deletePlayer(index) {
+      players.splice(index, 1);
+      // Reorder remaining players
+      players.forEach((player, idx) => {
+        player.no = (idx + 1).toString();
+      });
+      renderTable();
+    }
+
+    function toggleNewPlayerForm() {
+      const form = document.getElementById('newPlayerForm');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addNewPlayer() {
+      const newJerseyNumber = padPlayerNumber(document.getElementById('newNoPlayera').value);
+      if (isDuplicateJerseyNumber(newJerseyNumber)) {
+        alert('¡ALERTA! EL NÚMERO DE PLAYERA ' + newJerseyNumber + ' YA ESTÁ EN USO');
+        return;
+      }
+
+      const newPlayer = {
+        no: (players.length + 1).toString(),
+        nombre: document.getElementById('newNombre').value.toUpperCase(),
+        apellidoPaterno: document.getElementById('newApellidoPaterno').value.toUpperCase(),
+        apellidoMaterno: document.getElementById('newApellidoMaterno').value.toUpperCase(),
+        fechaNacimiento: document.getElementById('newFechaNacimiento').value,
+        curp: document.getElementById('newCURP').value.toUpperCase(),
+        telefono: document.getElementById('newTelefono').value.replace(/\D/g, ''),
+        noPlayera: newJerseyNumber,
+        posicion: document.getElementById('newPosicion').value
+      };
+      players.push(newPlayer);
+      renderTable();
+      toggleNewPlayerForm();
+      document.querySelectorAll('#newPlayerForm input, #newPlayerForm select').forEach(input => input.value = '');
+    }
+
+    function exportToPDF() {
+      document.body.classList.add('export-view');
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.text(document.getElementById('clubName').textContent, 14, 15);
+      
+      const tableData = players.map(player => [
+        player.no,
+        player.nombre,
+        player.apellidoPaterno,
+        player.apellidoMaterno,
+        player.fechaNacimiento,
+        player.curp,
+        player.telefono,
+        player.noPlayera,
+        player.posicion
+      ]);
+      
+      doc.autoTable({
+        head: [['NO.', 'NOMBRE', 'AP. PATERNO', 'AP. MATERNO', 'FECHA NAC.', 'CURP', 'TELÉFONO', 'NO. PLAY', 'POSICIÓN']],
+        body: tableData,
+        startY: 25,
+      });
+      
+      doc.save('roster.pdf');
+      document.body.classList.remove('export-view');
+    }
+
+    function exportToExcel() {
+      document.body.classList.add('export-view');
+      const workbook = XLSX.utils.book_new();
+      
+      const tableData = players.map(player => ({
+        'NO.': player.no,
+        'NOMBRE': player.nombre,
+        'APELLIDO PATERNO': player.apellidoPaterno,
+        'APELLIDO MATERNO': player.apellidoMaterno,
+        'FECHA NACIMIENTO': player.fechaNacimiento,
+        'CURP': player.curp,
+        'TELÉFONO': player.telefono,
+        'NO. PLAYERA': player.noPlayera,
+        'POSICIÓN': player.posicion
+      }));
+      
+      const worksheet = XLSX.utils.json_to_sheet(tableData);
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Roster');
+      
+      XLSX.writeFile(workbook, 'roster.xlsx');
+      document.body.classList.remove('export-view');
+    }
+
+    function exportToDrive() {
+      if (!gapiInited || !gisInited) {
+        alert('Error: Please wait for API initialization');
+        return;
+      }
+
+      tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+          throw (resp);
+        }
+        await uploadToDrive();
+      };
+
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+      } else {
+        tokenClient.requestAccessToken({prompt: ''});
+      }
+    }
+
+    async function uploadToDrive() {
+      try {
+        const fileMetadata = {
+          name: 'roster.xlsx',
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        };
+
+        const workbook = XLSX.utils.book_new();
+        const tableData = players.map(player => ({
+          'NO.': player.no,
+          'NOMBRE': player.nombre,
+          'APELLIDO PATERNO': player.apellidoPaterno,
+          'APELLIDO MATERNO': player.apellidoMaterno,
+          'FECHA Nacimiento': player.fechaNacimiento,
+          'CURP': player.curp,
+          'TELÉFONO': player.telefono,
+          'NO. PLAYERA': player.noPlayera,
+          'POSICIÓN': player.posicion
+        }));
+        
+        const worksheet = XLSX.utils.json_to_sheet(tableData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Roster');
+        
+        const excelBinary = XLSX.write(workbook, {bookType: 'xlsx', type: 'binary'});
+        const base64Data = btoa(excelBinary);
+
+        const file = new Blob([s2ab(atob(base64Data))], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+        const upload = await gapi.client.drive.files.create({
+          resource: fileMetadata,
+          media: {
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            body: file
+          },
+          fields: 'id'
+        });
+
+        alert('Archivo subido exitosamente a Google Drive!');
+      } catch (err) {
+        alert('Error al subir archivo: ' + err.message);
+      }
+    }
+
+    function s2ab(s) {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+      return buf;
+    }
+
+    function saveData() {
+      const data = {
+        clubName: document.getElementById('clubName').textContent,
+        players: players
+      };
+      
+      localStorage.setItem('rosterData', JSON.stringify(data));
+      alert('DATOS GUARDADOS EXITOSAMENTE');
+    }
+
+    function loadSavedData() {
+      const savedData = localStorage.getItem('rosterData');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        document.getElementById('clubName').textContent = data.clubName;
+        players = data.players;
+        renderTable();
+      }
+    }
+
+    window.addEventListener('load', () => {
+      loadSavedData();
+      renderTable();
+    });
+    renderTable();
+    
+    document.addEventListener('input', function(e) {
+      if (e.target.getAttribute('type') === 'tel') {
+        e.target.value = e.target.value.replace(/\D/g, '');
+      }
+    });
+  </script>
+  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
